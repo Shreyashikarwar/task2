@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Dialogues</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .movie {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .character {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            border-left: 2px solid #ccc;
+        }
+
+        .dialogue {
+            margin-top: 5px;
+            padding-left: 20px;
+            border-left: 2px solid #eee;
+        }
+
+        button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        h2, h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="app">
+            <!-- Movies will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        // Function to make AJAX request and render JSON data
+        function fetchAndRenderData() {
+            const url = 'http://127.0.0.1:8000/movie/get';
+
+            // Make AJAX request
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Render movies
+                renderMovies(data.message);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Function to render movies
+        function renderMovies(movies) {
+            const app = document.getElementById('app');
+
+            // Clear previous content
+            app.innerHTML = '';
+
+            // Iterate through movies
+            movies.forEach(movie => {
+                const movieDiv = document.createElement('div');
+                movieDiv.classList.add('movie');
+
+
+                var movie_id = movie.id;
+                console.log(movie)
+                // Create the Edit button
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.id = 'editMovie';
+                movieDiv.appendChild(editBtn);
+                editBtn.addEventListener('click', function() {
+                    // Redirect to the edit page with the movie_id
+                    // window.location.href = 'http://127.0.0.1:8000/movie/get/details/' + movie_id;
+                    fetch('http://127.0.0.1:8000/movie/get/details/' + movie_id)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Display API response data
+                            sessionStorage.setItem('userData', JSON.stringify(data));
+                            window.location.href ='http://127.0.0.1:8000/movie/update/'+movie_id;
+                        })
+                        .catch(error => {
+                            console.error('Error fetching data:', error);
+                            outputDiv.textContent = 'Failed to fetch data. Please try again.';
+                        });
+                });
+
+                const dltBtn = document.createElement('button');
+                dltBtn.textContent = 'Delete';
+                dltBtn.id = 'dltMovie';
+                movieDiv.appendChild(dltBtn);
+                dltBtn.addEventListener('click', function() {
+                    // Redirect to the edit page with the movie_id
+                    window.location.href = 'http://127.0.0.1:8000/movie/delete/' + movie_id;
+                });
+                // Movie title
+                const titleHeading = document.createElement('h2');
+                titleHeading.textContent = movie.name;
+                movieDiv.appendChild(titleHeading);
+
+                // Movie duration
+                const durationPara = document.createElement('p');
+                durationPara.textContent = 'Duration: ' + movie.duration;
+                movieDiv.appendChild(durationPara);
+
+                // Castings
+                movie.castings.forEach(casting => {
+                    const characterDiv = document.createElement('div');
+                    characterDiv.classList.add('character');
+
+                    // Character name
+                    const characterHeading = document.createElement('h3');
+                    characterHeading.textContent = casting.character_name + ' (' + casting.cast_name + ')';
+                    characterDiv.appendChild(characterHeading);
+
+                    // Character dialogues
+                    casting.dialogues.forEach(dialogue => {
+                        const dialoguePara = document.createElement('p');
+                        dialoguePara.classList.add('dialogue');
+                        dialoguePara.textContent = `${dialogue.start_time} - ${dialogue.end_time}: ${dialogue.dialogue}`;
+                        characterDiv.appendChild(dialoguePara);
+                    });
+
+                    movieDiv.appendChild(characterDiv);
+                });
+
+                app.appendChild(movieDiv);
+            });
+        }
+
+        // Fetch and render data on page load
+        window.onload = function() {
+            fetchAndRenderData();
+        };
+    </script>
+</body>
+</html>
